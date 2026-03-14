@@ -1,31 +1,4 @@
-**# adaptive-firewall-system
-adaptive-firewall-system/
-│
-├── frontend/                # React
-│   ├── src/
-│   ├── public/
-│   └── package.json
-│
-├── backend/                 # Flask
-│   ├── app.py
-│   ├── routes/
-│   ├── models/
-│   ├── services/
-│   ├── tests/
-│   └── requirements.txt
-│
-├── docs/
-│   ├── er-diagram.md
-│   ├── api-spec.md
-│   └── project-notes.md
-│
-├── .github/
-│   └── workflows/
-│       └── ci.yml
-│
-├── README.md
-└── .gitignore
-**# Security Guard System
+# Security Guard System
 
 Security Guard System is a multi-layer network security and monitoring project designed to detect suspicious activities, log potential attacks, and manage blocked IP addresses.
 

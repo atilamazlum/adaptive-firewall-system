@@ -4,3 +4,4 @@ Layer 3 engelleme
 graylist eklendi
 gece saati cezasi
 karma saldiri
+sureklilik

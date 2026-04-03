@@ -6,3 +6,4 @@ gece saati cezasi
 karma saldiri
 sureklilik
 target site
+ban sayfasi

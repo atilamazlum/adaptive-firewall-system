@@ -9,3 +9,4 @@ target site
 ban sayfasi
 dashboard harita
 dashboard grafik
+modal

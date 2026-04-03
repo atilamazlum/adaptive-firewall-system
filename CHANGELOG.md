@@ -12,3 +12,4 @@ dashboard grafik
 modal
 ip gecmis
 start stop script
+readme guncellendi

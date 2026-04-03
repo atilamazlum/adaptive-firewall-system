@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Erişim Engellendi</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #060810; color: #ff3366; font-family: 'JetBrains Mono', monospace;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    }
+    .box { text-align: center; padding: 40px; border: 1px solid rgba(255,51,102,0.3); border-radius: 8px; background: rgba(255,51,102,0.05); }
+    .icon { font-size: 64px; margin-bottom: 16px; }
+    .title { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .sub { font-size: 13px; color: #aa3355; margin-bottom: 24px; }
+    .ip { font-size: 11px; color: #663344; }
+    .glow { animation: glow 2s infinite; }
+    @keyframes glow { 0%,100%{text-shadow:0 0 20px rgba(255,51,102,0.5)} 50%{text-shadow:0 0 40px rgba(255,51,102,0.9)} }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="icon glow">🚫</div>
+    <div class="title glow">ERİŞİM ENGELLENDİ</div>
+    <div class="sub">IP adresiniz 3LayerFirewall tarafından banlanmıştır.</div>
+    <div class="sub">Şüpheli aktivite tespit edildi.</div>
+    <div class="ip">Bu karar otomatik olarak verilmiştir. 1 saat sonra tekrar deneyin.</div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Login</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+    :root {
+      --bg: #0a0c0f; --bg2: #111318; --bg3: #1a1d24;
+      --border: #1e2230; --text: #c8cdd8; --text-hi: #e8ecf4;
+      --text-dim: #5a6070; --accent: #00d4aa; --red: #ff4466;
+      --yellow: #ffbb44; --radius: 8px; --mono: 'JetBrains Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container { width: 100%; max-width: 400px; }
+    .logo {
+      text-align: center;
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+    .title {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-hi);
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-bottom: 32px;
+    }
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+    }
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block;
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .field input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .field input:focus { border-color: var(--accent); }
+    .btn {
+      width: 100%;
+      padding: 11px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: var(--radius);
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-top: 8px;
+    }
+    .btn:hover { background: #00bfa0; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .alert {
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      margin-bottom: 16px;
+      border: 1px solid;
+    }
+    .alert-error { background: rgba(255,68,102,0.1); border-color: rgba(255,68,102,0.3); color: var(--red); }
+    .alert-success { background: rgba(0,212,170,0.1); border-color: rgba(0,212,170,0.3); color: var(--accent); }
+    .attempts {
+      text-align: center;
+      font-size: 11px;
+      color: var(--red);
+      margin-top: 12px;
+    }
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 20px 0;
+    }
+    .hint {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-align: center;
+      line-height: 1.7;
+    }
+    .hint span { color: var(--yellow); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">🔐</div>
+    <div class="title">Secure Portal</div>
+    <div class="subtitle">3LayerFirewall koruması altında</div>
+
+    <div class="card">
+      <div id="alert" style="display:none" class="alert"></div>
+
+      <div class="field">
+        <label>Kullanıcı Adı</label>
+        <input id="username" type="text" placeholder="admin" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Şifre</label>
+        <input id="password" type="password" placeholder="••••••••" />
+      </div>
+
+      <button class="btn" id="loginBtn" onclick="login()">→ Giriş Yap</button>
+
+      <div id="attempts" class="attempts" style="display:none"></div>
+
+      <hr class="divider">
+      <div class="hint">
+        Test hesapları:<br>
+        <span>admin</span> / <span>admin123</span> &nbsp;|&nbsp; <span>user</span> / <span>password</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let attemptCount = 0;
+
+    async function login() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+      const btn = document.getElementById("loginBtn");
+      const alert = document.getElementById("alert");
+      const attempts = document.getElementById("attempts");
+
+      btn.disabled = true;
+      btn.textContent = "⏳ Kontrol ediliyor...";
+      alert.style.display = "none";
+
+      try {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+        const data = await res.json();
+
+        if (res.status === 403) { window.location.href = "/banned.html"; return; }
+        if (res.ok) {
+          alert.className = "alert alert-success";
+          alert.textContent = `✅ Hoş geldin, ${data.user.username}!`;
+          alert.style.display = "block";
+          attemptCount = 0;
+          attempts.style.display = "none";
+        } else {
+          attemptCount++;
+          alert.className = "alert alert-error";
+          alert.textContent = `❌ ${data.error}`;
+          alert.style.display = "block";
+          attempts.textContent = `⚠ ${attemptCount} başarısız deneme — 3LayerFirewall izliyor`;
+          attempts.style.display = "block";
+        }
+      } catch {
+        alert.className = "alert alert-error";
+window.location.href = '/banned.html'; return;
+        alert.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "→ Giriş Yap";
+      }
+    }
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "Enter") login();
+    });
+  </script>
+</body>
+</html>

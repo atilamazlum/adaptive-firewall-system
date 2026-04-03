@@ -1,0 +1,8 @@
+*.db
+*.log
+node_modules/
+__pycache__/
+*.pyc
+.env
+bans.db
+access.log

@@ -1,0 +1,17 @@
+# Tüm banlı IP'ler
+nft list set inet filter banned_ips
+
+# Tüm kurallar
+nft list ruleset
+
+# Belirli IP'yi unban et
+nft delete element inet filter banned_ips { 1.2.3.4 }
+
+# Hepsini temizle
+nft flush set inet filter banned_ips
+
+# Manuel ban ekle
+nft add element inet filter banned_ips { 1.2.3.4 }
+
+# Kaç IP banlı
+nft list set inet filter banned_ips | grep -c "elements"

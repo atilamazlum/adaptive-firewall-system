@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3LayerFirewall — Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #f8f9fb;
+  --surface: #ffffff;
+  --surface2: #f2f4f7;
+  --border: #e4e7ec;
+  --border2: #d0d5dd;
+  --text: #101828;
+  --text2: #475467;
+  --text3: #98a2b3;
+  --accent: #2563eb;
+  --accent-light: #eff6ff;
+  --red: #dc2626;
+  --red-light: #fef2f2;
+  --green: #16a34a;
+  --green-light: #f0fdf4;
+  --yellow: #d97706;
+  --yellow-light: #fffbeb;
+  --purple: #7c3aed;
+  --purple-light: #f5f3ff;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Inter', sans-serif;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.5; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0; width: 220px;
+  background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; padding: 20px 0; z-index: 100;
+}
+.logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); }
+.logo-icon { font-size: 22px; margin-bottom: 4px; }
+.logo-title { font-size: 15px; font-weight: 600; color: var(--text); }
+.logo-sub { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+.nav { flex: 1; padding: 16px 0; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 20px; cursor: pointer;
+  color: var(--text2); font-size: 13px; font-weight: 500;
+  border-left: 2px solid transparent; transition: all 0.15s;
+}
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: var(--accent-light); color: var(--accent); border-left-color: var(--accent); }
+.nav-icon { width: 18px; text-align: center; font-size: 15px; }
+.sidebar-bottom { padding: 16px 20px; border-top: 1px solid var(--border); }
+.live-indicator {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: var(--text3); font-family: var(--mono);
+}
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* ── MAIN ── */
+.main { margin-left: 220px; padding: 24px; min-height: 100vh; }
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── TOPBAR ── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px;
+}
+.page-title { font-size: 20px; font-weight: 600; color: var(--text); }
+.page-desc { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: var(--radius);
+  font-family: var(--sans); font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s; border: 1px solid transparent;
+}
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: #1d4ed8; }
+.btn-danger { background: var(--red-light); color: var(--red); border-color: #fecaca; }
+.btn-danger:hover { background: #fee2e2; }
+.btn-ghost { background: var(--surface); color: var(--text2); border-color: var(--border); }
+.btn-ghost:hover { background: var(--surface2); color: var(--text); }
+
+/* ── STAT CARDS ── */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 20px;
+  box-shadow: var(--shadow);
+}
+.stat-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.stat-label { font-size: 12px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-icon {
+  width: 36px; height: 36px; border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+}
+.stat-val { font-size: 28px; font-weight: 600; color: var(--text); line-height: 1; margin-bottom: 4px; }
+.stat-sub { font-size: 12px; color: var(--text3); }
+.stat-card.red .stat-icon { background: var(--red-light); }
+.stat-card.green .stat-icon { background: var(--green-light); }
+.stat-card.yellow .stat-icon { background: var(--yellow-light); }
+.stat-card.purple .stat-icon { background: var(--purple-light); }
+
+/* ── GRID LAYOUTS ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+.grid-full { margin-bottom: 16px; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 20px;
+  box-shadow: var(--shadow);
+}
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.card-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.card-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 99px;
+}
+.badge-red { background: var(--red-light); color: var(--red); }
+.badge-green { background: var(--green-light); color: var(--green); }
+.badge-yellow { background: var(--yellow-light); color: var(--yellow); }
+.badge-blue { background: var(--accent-light); color: var(--accent); }
+.badge-purple { background: var(--purple-light); color: var(--purple); }
+.badge-gray { background: var(--surface2); color: var(--text2); }
+
+/* ── THREAT BAR ── */
+.threat-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; border-radius: var(--radius);
+  border: 1px solid; margin-bottom: 20px; font-size: 13px;
+}
+.threat-low { background: var(--green-light); border-color: #bbf7d0; color: var(--green); }
+.threat-med { background: var(--yellow-light); border-color: #fde68a; color: var(--yellow); }
+.threat-high { background: var(--red-light); border-color: #fecaca; color: var(--red); }
+
+/* ── IP TABLE ── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left; font-size: 11px; font-weight: 600; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+td { padding: 11px 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface2); }
+.ip-cell { font-family: var(--mono); font-size: 12px; font-weight: 500; }
+.action-btn {
+  padding: 4px 10px; border-radius: var(--radius); border: 1px solid;
+  cursor: pointer; font-size: 11px; font-weight: 500;
+  background: transparent; transition: all 0.15s; font-family: var(--sans);
+}
+.action-btn.unban { border-color: #bbf7d0; color: var(--green); }
+.action-btn.unban:hover { background: var(--green-light); }
+.action-btn.ban-btn { border-color: #fecaca; color: var(--red); }
+.action-btn.ban-btn:hover { background: var(--red-light); }
+
+/* ── GAUGE ── */
+.gauge-wrap { display: flex; flex-direction: column; align-items: center; padding: 16px 0; }
+.gauge-svg { width: 180px; height: 100px; }
+.gauge-val { font-size: 32px; font-weight: 600; color: var(--text); margin-top: -8px; }
+.gauge-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ── LOG TERMINAL ── */
+.log-wrap {
+  background: #0f172a; border-radius: var(--radius);
+  padding: 14px; max-height: 260px; overflow-y: auto;
+  font-family: var(--mono); font-size: 11px;
+  scrollbar-width: thin; scrollbar-color: #334155 transparent;
+}
+.log-line { margin-bottom: 3px; color: #64748b; }
+.log-line.brute { color: #f87171; }
+.log-line.flood { color: #fbbf24; }
+.log-line.xss { color: #60a5fa; }
+.log-line.sqli { color: #c084fc; }
+.log-line.info { color: #34d399; }
+
+/* ── WORLD MAP ── */
+.map-container { position: relative; background: var(--surface2); border-radius: var(--radius); overflow: hidden; }
+#world-svg { width: 100%; height: 240px; }
+
+/* ── ATTACK BARS ── */
+.atk-bar { margin-bottom: 14px; }
+.atk-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px; }
+.atk-track { background: var(--surface2); border-radius: 99px; height: 6px; overflow: hidden; }
+.atk-fill { height: 100%; border-radius: 99px; transition: width 0.8s ease; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--surface); border-radius: var(--radius-lg);
+  padding: 24px; width: 400px; box-shadow: var(--shadow-md);
+  transform: scale(0.95); transition: transform 0.2s;
+}
+.modal-overlay.open .modal { transform: scale(1); }
+.modal-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+.modal-body { font-size: 13px; color: var(--text2); margin-bottom: 20px; line-height: 1.6; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+/* ── FORM ── */
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 6px; }
+.form-input {
+  width: 100%; padding: 8px 12px; border: 1px solid var(--border);
+  border-radius: var(--radius); font-family: var(--sans); font-size: 13px;
+  color: var(--text); background: var(--surface); outline: none; transition: border-color 0.15s;
+}
+.form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+/* ── CHART WRAP ── */
+.chart-container { position: relative; height: 200px; }
+
+/* ── EMPTY STATE ── */
+.empty { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 13px; }
+.empty-icon { font-size: 32px; margin-bottom: 8px; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+
+/* ── TELEGRAM SECTION ── */
+.telegram-row { display: flex; gap: 10px; align-items: flex-end; }
+.telegram-row .form-group { flex: 1; margin-bottom: 0; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">🛡</div>
+    <div class="logo-title">3LayerFirewall</div>
+    <div class="logo-sub">Admin Dashboard</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="showPage('overview')">
+      <span class="nav-icon">📊</span> Genel Bakış
+    </div>
+    <div class="nav-item" onclick="showPage('banned')">
+      <span class="nav-icon">🚫</span> Banlı IP'ler
+    </div>
+    <div class="nav-item" onclick="showPage('history')">
+      <span class="nav-icon">📋</span> Geçmiş Kayıtlar
+    </div>
+    <div class="nav-item" onclick="showPage('stats')">
+      <span class="nav-icon">📈</span> İstatistikler
+    </div>
+    <div class="nav-item" onclick="showPage('settings')">
+      <span class="nav-icon">⚙️</span> Ayarlar
+    </div>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="live-indicator">
+      <div class="live-dot"></div>
+      <span id="last-update">Bekleniyor...</span>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- OVERVIEW PAGE -->
+  <div class="page active" id="page-overview">
+    <div class="topbar">
+      <div>
+        <div class="page-title">Genel Bakış</div>
+        <div class="page-desc">Sistem durumu ve canlı saldırı izleme</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-ghost" onclick="fetchData()">🔄 Yenile</button>
+        <button class="btn btn-danger" onclick="confirmUnbanAll()">🗑 Tüm Banları Kaldır</button>
+      </div>
+    </div>
+
+    <div id="threat-bar" class="threat-bar threat-low">
+      <span id="threat-icon">🟢</span>
+      <span id="threat-text">TEHDİT SEVİYESİ: DÜŞÜK — Sistem normal çalışıyor</span>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card red">
+        <div class="stat-header">
+          <div class="stat-label">Banlı IP</div>
+          <div class="stat-icon">🚫</div>
+        </div>
+        <div class="stat-val" id="s-banned">0</div>
+        <div class="stat-sub">aktif ban</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-header">
+          <div class="stat-label">Toplam Olay</div>
+          <div class="stat-icon">⚡</div>
+        </div>
+        <div class="stat-val" id="s-total">0</div>
+        <div class="stat-sub">log kaydı</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-header">
+          <div class="stat-label">İzlenen IP</div>
+          <div class="stat-icon">👁</div>
+        </div>
+        <div class="stat-val" id="s-ips">0</div>
+        <div class="stat-sub">benzersiz IP</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-header">
+          <div class="stat-label">Brute Force</div>
+          <div class="stat-icon">🔑</div>
+        </div>
+        <div class="stat-val" id="s-brute">0</div>
+        <div class="stat-sub">deneme</div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Saldırı Zaman Serisi</div>
+            <div class="card-sub">Son 24 saatlik aktivite</div>
+          </div>
+          <span class="badge badge-blue">Canlı</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="timeChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Risk Skoru</div>
+        </div>
+        <div class="gauge-wrap">
+          <svg class="gauge-svg" viewBox="0 0 180 100">
+            <path d="M15,90 A75,75 0 0,1 165,90" fill="none" stroke="#e4e7ec" stroke-width="14" stroke-linecap="round"/>
+            <path id="gauge-path" d="M15,90 A75,75 0 0,1 165,90" fill="none" stroke="#16a34a" stroke-width="14" stroke-linecap="round"
+              stroke-dasharray="235.6" stroke-dashoffset="235.6" style="transition:all 1s ease"/>
+          </svg>
+          <div class="gauge-val" id="gauge-val">0</div>
+          <div class="gauge-label">Ortalama Tehdit</div>
+        </div>
+        <div id="attack-bars" style="margin-top:8px"></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🗺 Saldırı Haritası</div>
+          <div class="badge badge-gray" id="map-count">0 aktif</div>
+        </div>
+        <div class="map-container">
+          <svg id="world-svg" viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg">
+            <rect width="1000" height="500" fill="#f2f4f7"/>
+            <!-- Simplified continent outlines -->
+            <!-- North America -->
+            <path d="M100,60 L240,45 L280,90 L310,160 L270,240 L200,280 L150,260 L110,200 L85,140 Z" fill="#e4e7ec" stroke="#d0d5dd" stroke-width="1"/>
+            <!-- South America -->
+            <path d="M185,300 L270,285 L300,380 L265,460 L210,455 L175,400 Z" fill="#e4e7ec" stroke="#d0d5dd" stroke-width="1"/>
+            <!-- Europe -->
+            <path d="M440,55 L540,40 L565,90 L530,140 L470,155 L425,125 Z" fill="#e4e7ec" stroke="#d0d5dd" stroke-width="1"/>
+            <!-- Africa -->
+            <path d="M440,180 L540,165 L570,290 L530,420 L465,430 L415,310 Z" fill="#e4e7ec" stroke="#d0d5dd" stroke-width="1"/>
+            <!-- Asia -->
+            <path d="M565,40 L870,30 L900,200 L810,280 L680,260 L565,180 Z" fill="#e4e7ec" stroke="#d0d5dd" stroke-width="1"/>
+            <!-- Russia top -->
+            <path d="M555,20 L900,10 L910,50 L870,30 L565,40 Z" fill="#e4e7ec" stroke="#d0d5dd" stroke-width="1"/>
+            <!-- Australia -->
+            <path d="M760,310 L900,295 L920,400 L840,430 L745,400 Z" fill="#e4e7ec" stroke="#d0d5dd" stroke-width="1"/>
+            <g id="map-dots"></g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">💻 Canlı Log</div>
+          <span class="badge badge-green">● Canlı</span>
+        </div>
+        <div class="log-wrap" id="log-box">
+          <div class="log-line info">> sistem başlatıldı, log izleniyor...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BANNED PAGE -->
+  <div class="page" id="page-banned">
+    <div class="topbar">
+      <div>
+        <div class="page-title">Banlı IP'ler</div>
+        <div class="page-desc">Aktif ban listesi ve yönetimi</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-primary" onclick="showManualBan()">+ Manuel Ban</button>
+        <button class="btn btn-danger" onclick="confirmUnbanAll()">🗑 Hepsini Kaldır</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>IP Adresi</th>
+              <th>Ülke</th>
+              <th>Skor</th>
+              <th>Neden</th>
+              <th>Banlanma Zamanı</th>
+              <th>Bitiş</th>
+              <th>İşlem</th>
+            </tr>
+          </thead>
+          <tbody id="banned-table">
+            <tr><td colspan="7"><div class="empty"><div class="empty-icon">✅</div>Banlı IP yok</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY PAGE -->
+  <div class="page" id="page-history">
+    <div class="topbar">
+      <div>
+        <div class="page-title">Geçmiş Kayıtlar</div>
+        <div class="page-desc">Tüm ban geçmişi ve log kayıtları</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Ban Geçmişi</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>IP Adresi</th>
+              <th>Ülke</th>
+              <th>Skor</th>
+              <th>Neden</th>
+              <th>Banlanma Zamanı</th>
+              <th>Durum</th>
+            </tr>
+          </thead>
+          <tbody id="history-table">
+            <tr><td colspan="6"><div class="empty"><div class="empty-icon">📋</div>Kayıt yok</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS PAGE -->
+  <div class="page" id="page-stats">
+    <div class="topbar">
+      <div>
+        <div class="page-title">İstatistikler</div>
+        <div class="page-desc">Saldırı analizi ve trend raporları</div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Saldırı Türü Dağılımı</div>
+        </div>
+        <div class="chart-container">
+          <canvas id="typeChart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Saatlik Aktivite</div>
+        </div>
+        <div class="chart-container">
+          <canvas id="hourlyChart"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">En Aktif IP'ler</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>IP Adresi</th>
+              <th>Toplam</th>
+              <th>Brute Force</th>
+              <th>Flood</th>
+              <th>XSS</th>
+              <th>SQLi</th>
+              <th>Risk</th>
+            </tr>
+          </thead>
+          <tbody id="stats-table">
+            <tr><td colspan="7"><div class="empty"><div class="empty-icon">📈</div>Veri yok</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS PAGE -->
+  <div class="page" id="page-settings">
+    <div class="topbar">
+      <div>
+        <div class="page-title">Ayarlar</div>
+        <div class="page-desc">Sistem konfigürasyonu ve Telegram bildirimleri</div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📱 Telegram Bildirimleri</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bot Token</label>
+          <input class="form-input" id="tg-token" type="password" placeholder="1234567890:ABCdef..."/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Chat ID</label>
+          <input class="form-input" id="tg-chat" placeholder="-100123456789"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Test Mesajı</label>
+          <input class="form-input" id="tg-msg" value="🛡 3LayerFirewall test mesajı"/>
+        </div>
+        <button class="btn btn-primary" onclick="sendTelegram()">📨 Test Gönder</button>
+        <div id="tg-result" style="margin-top:10px;font-size:12px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">⚙️ Sistem Bilgisi</div>
+        </div>
+        <table style="width:100%;font-size:13px;">
+          <tr>
+            <td style="padding:8px 0;color:var(--text2)">Versiyon</td>
+            <td style="font-family:var(--mono)">3LayerFirewall v2.0</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;color:var(--text2);border-top:1px solid var(--border)">Log Dosyası</td>
+            <td style="font-family:var(--mono);font-size:11px;border-top:1px solid var(--border)" id="info-log">—</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;color:var(--text2);border-top:1px solid var(--border)">Veritabanı</td>
+            <td style="font-family:var(--mono);font-size:11px;border-top:1px solid var(--border)" id="info-db">—</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;color:var(--text2);border-top:1px solid var(--border)">Uptime</td>
+            <td style="border-top:1px solid var(--border)" id="info-uptime">—</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- MODAL: Onay -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Emin misin?</div>
+    <div class="modal-body" id="modal-body">Bu işlem geri alınamaz.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">İptal</button>
+      <button class="btn btn-danger" id="modal-confirm-btn">Onayla</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Manuel Ban -->
+<div class="modal-overlay" id="ban-modal">
+  <div class="modal">
+    <div class="modal-title">Manuel IP Ban</div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">IP Adresi</label>
+        <input class="form-input" id="manual-ip" placeholder="1.2.3.4"/>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeBanModal()">İptal</button>
+      <button class="btn btn-danger" onclick="doManualBan()">🚫 Banla</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let timeChart, typeChart, hourlyChart;
+let prevLogs = [];
+let startTime = Date.now();
+
+// ── NAVIGATION ──────────────────────────────────────────────────────────────
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ── CHARTS INIT ─────────────────────────────────────────────────────────────
+function initCharts() {
+  const baseOpts = {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    plugins: { legend: { display: false } },
+  };
+
+  timeChart = new Chart(document.getElementById('timeChart'), {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        { label: 'Brute Force', data: [], borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,0.08)', tension: 0.4, fill: true, pointRadius: 0 },
+        { label: 'Flood', data: [], borderColor: '#d97706', backgroundColor: 'rgba(217,119,6,0.05)', tension: 0.4, fill: true, pointRadius: 0 },
+      ]
+    },
+    options: {
+      ...baseOpts,
+      scales: {
+        x: { ticks: { color: '#98a2b3', font: { size: 10 } }, grid: { color: '#f2f4f7' } },
+        y: { ticks: { color: '#98a2b3', font: { size: 10 } }, grid: { color: '#f2f4f7' }, min: 0, ticks: { stepSize: 1 } }
+      }
+    }
+  });
+
+  typeChart = new Chart(document.getElementById('typeChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Brute Force', 'Flood', 'XSS', 'SQLi'],
+      datasets: [{ data: [0,0,0,0], backgroundColor: ['#dc2626','#d97706','#2563eb','#7c3aed'], borderWidth: 0 }]
+    },
+    options: { ...baseOpts, plugins: { legend: { display: true, position: 'bottom', labels: { font: { size: 11 }, padding: 12 } } } }
+  });
+
+  hourlyChart = new Chart(document.getElementById('hourlyChart'), {
+    type: 'bar',
+    data: { labels: Array.from({length:24}, (_,i) => i+':00'), datasets: [{ label: 'Olay', data: Array(24).fill(0), backgroundColor: 'rgba(37,99,235,0.7)', borderRadius: 3 }] },
+    options: {
+      ...baseOpts,
+      scales: {
+        x: { ticks: { color: '#98a2b3', font: { size: 9 } }, grid: { display: false } },
+        y: { ticks: { color: '#98a2b3', font: { size: 10 } }, grid: { color: '#f2f4f7' }, min: 0 }
+      }
+    }
+  });
+}
+
+// Country coords on SVG viewBox 0 0 1000 500
+const countryCoords = {
+  'RU': [700,80], 'CN': [770,180], 'US': [180,160], 'DE': [490,95],
+  'NL': [470,85], 'FR': [460,115], 'BR': [220,370], 'IN': [660,220],
+  'KR': [800,155], 'JP': [830,150], 'UA': [530,100], 'IR': [600,175],
+  'TR': [550,130], 'GB': [445,90], 'PK': [630,190], 'VN': [760,230],
+  'ID': [780,300], 'NG': [480,280], 'MX': [140,200],
+};
+
+let attackPoints = [];
+
+function updateMap(banned, ipStats) {
+  const dots = document.getElementById('map-dots');
+  dots.innerHTML = '';
+  let count = 0;
+
+  banned.forEach((b, i) => {
+    const cc = b.country || '??';
+    const coords = countryCoords[cc];
+    if (!coords) return;
+    count++;
+    const [cx, cy] = coords;
+    dots.innerHTML += `
+      <circle cx="${cx}" cy="${cy}" r="7" fill="#dc2626" opacity="0.85"/>
+      <circle cx="${cx}" cy="${cy}" r="14" fill="none" stroke="#dc2626" stroke-width="1.5" opacity="0.4">
+        <animate attributeName="r" values="7;18;7" dur="2s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.4;0;0.4" dur="2s" repeatCount="indefinite"/>
+      </circle>
+      <title>${b.ip} — ${b.country}/${b.city}</title>
+    `;
+  });
+
+  document.getElementById('map-count').textContent = count + ' aktif';
+}
+
+// ── FETCH & RENDER ───────────────────────────────────────────────────────────
+async function fetchData() {
+  try {
+    const [statusRes, historyRes] = await Promise.all([
+      fetch(API + '/api/status'),
+      fetch(API + '/api/history')
+    ]);
+    const status = await statusRes.json();
+    const history = await historyRes.json();
+    render(status, history);
+    document.getElementById('last-update').textContent = new Date().toLocaleTimeString('tr-TR');
+  } catch(e) { console.error(e); }
+}
+
+function render(data, historyData) {
+  const banned = data.banned || [];
+  const ipStats = data.ipStats || {};
+  const typeCounts = data.typeCounts || {};
+  const hourly = data.hourly || {};
+  const total = data.total || 0;
+
+  // Stats
+  document.getElementById('s-banned').textContent = banned.length;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-ips').textContent = Object.keys(ipStats).length;
+  document.getElementById('s-brute').textContent = typeCounts.brute_force || 0;
+
+  // Threat level
+  const threat = document.getElementById('threat-bar');
+  if (banned.length >= 3) {
+    threat.className = 'threat-bar threat-high';
+    document.getElementById('threat-icon').textContent = '🔴';
+    document.getElementById('threat-text').textContent = 'TEHDİT SEVİYESİ: KRİTİK — ' + banned.length + ' IP aktif ban altında';
+  } else if (banned.length >= 1 || total > 20) {
+    threat.className = 'threat-bar threat-med';
+    document.getElementById('threat-icon').textContent = '🟡';
+    document.getElementById('threat-text').textContent = 'TEHDİT SEVİYESİ: ORTA — Saldırı aktivitesi tespit edildi';
+  } else {
+    threat.className = 'threat-bar threat-low';
+    document.getElementById('threat-icon').textContent = '🟢';
+    document.getElementById('threat-text').textContent = 'TEHDİT SEVİYESİ: DÜŞÜK — Sistem normal çalışıyor';
+  }
+
+  // Gauge
+  const score = Math.min(banned.length * 25 + (total > 50 ? 25 : 0), 100);
+  const dashOffset = 235.6 - (score / 100) * 235.6;
+  const gaugePath = document.getElementById('gauge-path');
+  gaugePath.style.strokeDashoffset = dashOffset;
+  gaugePath.style.stroke = score >= 70 ? '#dc2626' : score >= 40 ? '#d97706' : '#16a34a';
+  document.getElementById('gauge-val').textContent = score;
+
+  // Attack bars
+  const maxVal = Math.max(typeCounts.brute_force||0, typeCounts.flood||0, typeCounts.xss||0, typeCounts.sqli||0, 1);
+  const atks = [
+    { label: 'Brute Force', val: typeCounts.brute_force||0, color: '#dc2626' },
+    { label: 'Flood/DDoS', val: typeCounts.flood||0, color: '#d97706' },
+    { label: 'XSS', val: typeCounts.xss||0, color: '#2563eb' },
+    { label: 'SQL Injection', val: typeCounts.sqli||0, color: '#7c3aed' },
+  ];
+  document.getElementById('attack-bars').innerHTML = atks.map(a => `
+    <div class="atk-bar">
+      <div class="atk-header">
+        <span style="color:${a.color};font-size:12px;font-weight:500">${a.label}</span>
+        <span style="color:#98a2b3;font-size:12px">${a.val}</span>
+      </div>
+      <div class="atk-track">
+        <div class="atk-fill" style="width:${(a.val/maxVal)*100}%;background:${a.color}"></div>
+      </div>
+    </div>
+  `).join('');
+
+  // Time chart update
+  const now = new Date().toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  if (timeChart.data.labels.length > 20) {
+    timeChart.data.labels.shift();
+    timeChart.data.datasets.forEach(d => d.data.shift());
+  }
+  timeChart.data.labels.push(now);
+  timeChart.data.datasets[0].data.push(typeCounts.brute_force||0);
+  timeChart.data.datasets[1].data.push(typeCounts.flood||0);
+  timeChart.update();
+
+  // Type chart
+  typeChart.data.datasets[0].data = [typeCounts.brute_force||0, typeCounts.flood||0, typeCounts.xss||0, typeCounts.sqli||0];
+  typeChart.update();
+
+  // Hourly chart
+  const hourlyData = Array(24).fill(0);
+  Object.entries(hourly).forEach(([h, v]) => { hourlyData[parseInt(h)] = v.total || 0; });
+  hourlyChart.data.datasets[0].data = hourlyData;
+  hourlyChart.update();
+
+  // Map
+  updateMap(banned, ipStats);
+
+  // Log
+  const newLogs = (data.recentLogs || []).filter(l => !prevLogs.includes(l));
+  prevLogs = data.recentLogs || [];
+  const logBox = document.getElementById('log-box');
+  newLogs.forEach(line => {
+    let cls = '';
+    const txt = typeof line === 'string' ? line : (line.raw || JSON.stringify(line));
+        if (txt.includes('Failed password')) cls = 'brute';
+    else if (txt.includes('identification')) cls = 'flood';
+    else if (txt.includes('XSS')) cls = 'xss';
+    else if (txt.includes('SQL')) cls = 'sqli';
+    const el = document.createElement('div');
+    el.className = 'log-line ' + cls;
+    el.textContent = txt;
+    logBox.appendChild(el);
+    while (logBox.children.length > 50) logBox.removeChild(logBox.firstChild);
+  });
+  logBox.scrollTop = logBox.scrollHeight;
+
+  // Banned table
+  const tbody = document.getElementById('banned-table');
+  if (!banned.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty"><div class="empty-icon">✅</div>Banlı IP yok</div></td></tr>';
+  } else {
+    tbody.innerHTML = banned.map(b => {
+      const bannedAt = b.banned_at ? new Date(b.banned_at * 1000).toLocaleString('tr-TR') : '—';
+      const expiresAt = b.expires_at ? new Date(b.expires_at * 1000).toLocaleTimeString('tr-TR') : 'Kalıcı';
+      const score = b.score || 0;
+      const scoreColor = score >= 70 ? '#dc2626' : score >= 40 ? '#d97706' : '#16a34a';
+      return `<tr>
+        <td><span class="ip-cell">${b.ip}</span></td>
+        <td><span class="badge badge-gray">${b.country||'??'} ${b.city||''}</span></td>
+        <td><span style="color:${scoreColor};font-weight:600">${score}</span></td>
+        <td><span class="badge ${b.reason==='manual'?'badge-blue':'badge-red'}">${b.reason||'auto'}</span></td>
+        <td style="color:#475467;font-size:12px">${bannedAt}</td>
+        <td style="font-family:var(--mono);font-size:11px">${expiresAt}</td>
+        <td><button class="action-btn unban" onclick="confirmUnban('${b.ip}')">Kaldır</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // History table
+  const history = historyData?.history || [];
+  const htbody = document.getElementById('history-table');
+  if (!history.length) {
+    htbody.innerHTML = '<tr><td colspan="6"><div class="empty"><div class="empty-icon">📋</div>Kayıt yok</div></td></tr>';
+  } else {
+    htbody.innerHTML = history.map(b => {
+      const bannedAt = b.banned_at ? new Date(b.banned_at * 1000).toLocaleString('tr-TR') : '—';
+      const now = Date.now() / 1000;
+      const active = !b.expires_at || b.expires_at > now;
+      return `<tr>
+        <td><span class="ip-cell">${b.ip}</span></td>
+        <td>${b.country||'??'} ${b.city||''}</td>
+        <td>${b.score||0}</td>
+        <td>${b.reason||'auto'}</td>
+        <td style="font-size:12px">${bannedAt}</td>
+        <td><span class="badge ${active?'badge-red':'badge-gray'}">${active?'Aktif':'Sona Erdi'}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Stats table
+  const stbody = document.getElementById('stats-table');
+  const sorted = Object.entries(ipStats).sort((a,b) => b[1].total - a[1].total).slice(0, 20);
+  if (!sorted.length) {
+    stbody.innerHTML = '<tr><td colspan="7"><div class="empty"><div class="empty-icon">📈</div>Veri yok</div></td></tr>';
+  } else {
+    stbody.innerHTML = sorted.map(([ip, s]) => {
+      const risk = Math.min(s.total * 3, 100);
+      const riskColor = risk >= 70 ? '#dc2626' : risk >= 40 ? '#d97706' : '#16a34a';
+      return `<tr>
+        <td><span class="ip-cell">${ip}</span></td>
+        <td><strong>${s.total}</strong></td>
+        <td>${s.brute_force||0}</td>
+        <td>${s.flood||0}</td>
+        <td>${s.xss||0}</td>
+        <td>${s.sqli||0}</td>
+        <td><span style="color:${riskColor};font-weight:600">${risk}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Uptime
+  const uptime = Math.floor((Date.now() - startTime) / 1000);
+  document.getElementById('info-uptime').textContent = uptime + 's';
+}
+
+// ── MODALS ───────────────────────────────────────────────────────────────────
+let pendingAction = null;
+
+function confirmUnban(ip) {
+  document.getElementById('modal-title').textContent = 'IP Banını Kaldır';
+  document.getElementById('modal-body').textContent = ip + ' adresinin banını kaldırmak istediğine emin misin?';
+  document.getElementById('modal-confirm-btn').onclick = () => { doUnban(ip); closeModal(); };
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+function confirmUnbanAll() {
+  document.getElementById('modal-title').textContent = 'Tüm Banları Kaldır';
+  document.getElementById('modal-body').textContent = 'Tüm banlı IP\'lerin yasağını kaldırmak istediğine emin misin? Bu işlem geri alınamaz.';
+  document.getElementById('modal-confirm-btn').onclick = () => { doUnbanAll(); closeModal(); };
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('confirm-modal').classList.remove('open'); }
+
+function showManualBan() { document.getElementById('ban-modal').classList.add('open'); }
+function closeBanModal() { document.getElementById('ban-modal').classList.remove('open'); }
+
+async function doUnban(ip) {
+  await fetch(API + '/api/unban', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ip}) });
+  fetchData();
+}
+
+async function doUnbanAll() {
+  await fetch(API + '/api/unban-all', { method: 'POST' });
+  fetchData();
+}
+
+async function doManualBan() {
+  const ip = document.getElementById('manual-ip').value.trim();
+  if (!ip) return;
+  await fetch(API + '/api/ban', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ip}) });
+  closeBanModal();
+  fetchData();
+}
+
+// ── TELEGRAM ─────────────────────────────────────────────────────────────────
+async function sendTelegram() {
+  const token = document.getElementById('tg-token').value.trim();
+  const chatId = document.getElementById('tg-chat').value.trim();
+  const message = document.getElementById('tg-msg').value.trim();
+  if (!token || !chatId) { document.getElementById('tg-result').innerHTML = '<span style="color:#dc2626">Token ve Chat ID gerekli!</span>'; return; }
+  const res = await fetch(API + '/api/telegram', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ token, chatId, message })
+  });
+  const data = await res.json();
+  document.getElementById('tg-result').innerHTML = data.success
+    ? '<span style="color:#16a34a">✅ Mesaj gönderildi!</span>'
+    : '<span style="color:#dc2626">❌ Gönderilemedi. Token/Chat ID kontrol et.</span>';
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+initCharts();
+fetchData();
+setInterval(fetchData, 4000);
+</script>
+</body>
+</html>

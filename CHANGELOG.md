@@ -11,3 +11,4 @@ dashboard harita
 dashboard grafik
 modal
 ip gecmis
+start stop script

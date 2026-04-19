@@ -182,6 +182,13 @@ THRESHOLDS = {
 BAN_SCORE_THRESHOLD = 70
 BAN_DURATION = 3600  # 1 saat
 ```
+## Görseller
 <p align="center">
   <img src="1.png" width="300"/>
+  <img src="2.png" width="300"/>
+</p>
+
+<p align="center">
+  <img src="3.png" width="300"/>
+  <img src="4.png" width="300"/>
 </p>

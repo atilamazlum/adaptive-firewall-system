@@ -182,3 +182,6 @@ THRESHOLDS = {
 BAN_SCORE_THRESHOLD = 70
 BAN_DURATION = 3600  # 1 saat
 ```
+<p align="center">
+  <img src="1.png" width="300"/>
+</p>

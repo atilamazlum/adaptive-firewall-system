@@ -1,0 +1,16 @@
+{
+  "name": "adaptive-firewall-dashboard",
+  "version": "3.0.0",
+  "description": "Adaptive Firewall - yonetim paneli",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "express": "^4.19.2",
+    "mysql2": "^3.22.3",
+    "pdfkit": "^0.18.0",
+    "ws": "^8.18.0"
+  }
+}

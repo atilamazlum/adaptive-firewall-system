@@ -11,30 +11,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Python kur
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
       - name: Bagimliliklari kur
         run: |
           pip install --upgrade pip
           pip install flake8 mysql-connector-python
-
       - name: Python syntax kontrolu
         run: |
-          python -m py_compile core/config.py
-          python -m py_compile core/detector.py
-          python -m py_compile core/scorer.py
-          python -m py_compile core/blocker.py
-          python -m py_compile core/geoip.py
-          python -m py_compile core/database.py
-          python -m py_compile core/engine.py
-          python -m py_compile core/telegram_bot.py
-          python -m py_compile main.py
-          python -m py_compile simulator/attack_sim.py
-
+          for f in core/config.py core/detector.py core/scorer.py core/blocker.py core/geoip.py core/database.py core/engine.py core/telegram_bot.py main.py simulator/attack_sim.py; do
+            python -m py_compile $f
+          done
       - name: Lint (flake8)
         run: |
           flake8 core/ main.py simulator/ \
@@ -46,27 +35,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Node.js kur
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Site bagimliliklari
+      - name: Site syntax
         working-directory: ./site
-        run: npm install
-
-      - name: Site syntax kontrolu
-        working-directory: ./site
-        run: node --check server.js
-
-      - name: Dashboard bagimliliklari
-        working-directory: ./dashboard
-        run: npm install
-
-      - name: Dashboard syntax kontrolu
+        run: |
+          npm install
+          node --check server.js
+      - name: Dashboard syntax
         working-directory: ./dashboard
         run: |
+          npm install
           node --check server.js
           node --check public/app.js
 
@@ -90,11 +71,135 @@ jobs:
               ('LOGIN_FAIL ip=9.10.11.12 user=admin', 'brute_force'),
               ('HONEYPOT ip=13.14.15.16 path=/wp-admin', 'honeypot'),
               ('FLOOD ip=17.18.19.20 rate=500', 'ddos'),
+              ('PATH_TRAVERSAL ip=21.22.23.24 path=../../etc', 'path_traversal'),
+              ('CMD_INJECT ip=25.26.27.28 cmd=cat /etc/passwd', 'command_injection'),
           ]
           for line, expected in tests:
               r = d.parse(line)
-              assert r is not None, f'Detector None doner: {line}'
+              assert r is not None, f'Detector None: {line}'
               assert r['type'] == expected, f'Beklenen {expected}, geldi {r[\"type\"]}'
               print(f'OK {expected}: {r[\"ip\"]}')
-          print('Tum testler basarili')
+          print('TUM TESTLER BASARILI')
+          "
+
+  scorer-test:
+    runs-on: ubuntu-latest
+    needs: python-checks
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Scorer birim testi
+        working-directory: ./core
+        run: |
+          python3 -c "
+          import time
+          from scorer import calculate
+          settings = {
+              'brute_force_count': 5, 'brute_force_window': 60,
+              'port_scan_count': 10, 'port_scan_window': 30,
+              'ddos_count': 100, 'ddos_window': 10,
+              'bot_count': 5, 'bot_window': 60,
+              'slow_brute_count': 15, 'slow_brute_window': 1800,
+              'web_attack_window': 60, 'mixed_attack_bonus': 15,
+              'persistent_penalty': 10, 'night_start': 0, 'night_end': 5,
+              'night_multiplier': 25, 'foreign_penalty': 20,
+              'trusted_countries': ['TR'],
+          }
+          now = time.time()
+          # Test 1: Brute force esik
+          p1 = {'ip':'1.2.3.4','events':[{'time':now-i,'type':'brute_force','detail':''} for i in range(8)],'geo':{'country':'CN'}}
+          r1 = calculate(p1, settings)
+          assert r1['score'] >= 50, f'Brute force skoru dusuk: {r1[\"score\"]}'
+          print(f'OK Brute force x8: skor={r1[\"score\"]}')
+          # Test 2: Honeypot anlik 100
+          p2 = {'ip':'5.6.7.8','events':[{'time':now,'type':'honeypot','detail':''}],'geo':{'country':'US'}}
+          r2 = calculate(p2, settings)
+          assert r2['score'] == 100, f'Honeypot skoru 100 olmali: {r2[\"score\"]}'
+          print(f'OK Honeypot: skor={r2[\"score\"]}')
+          # Test 3: Karma saldiri bonus
+          p3 = {'ip':'9.10.11.12','events':[
+              {'time':now,'type':'xss','detail':''},
+              {'time':now,'type':'sqli','detail':''}
+          ],'geo':{'country':'RU'}}
+          r3 = calculate(p3, settings)
+          assert r3['score'] > 30, f'Karma saldiri skoru dusuk: {r3[\"score\"]}'
+          print(f'OK Karma (XSS+SQLi): skor={r3[\"score\"]}')
+          print('SCORER TESTLERI BASARILI')
+          "
+
+  database-test:
+    runs-on: ubuntu-latest
+    needs: python-checks
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpass
+          MYSQL_DATABASE: firewall
+          MYSQL_USER: fwuser
+          MYSQL_PASSWORD: firewall123
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: MySQL bekle
+        run: |
+          for i in {1..30}; do
+            mysqladmin ping -h 127.0.0.1 -ufwuser -pfirewall123 && break
+            sleep 2
+          done
+      - name: Python bagimliliklari
+        run: pip install mysql-connector-python
+      - name: Database birim testi
+        working-directory: ./core
+        run: |
+          python3 -c "
+          import sys, os
+          sys.path.insert(0, '.')
+          # Test ortami icin DB_CONFIG'i override et
+          import config
+          config.DB_CONFIG = {
+              'host': '127.0.0.1', 'port': 3306,
+              'user': 'fwuser', 'password': 'firewall123',
+              'database': 'firewall'
+          }
+          import database as db
+
+          # Init
+          db.init()
+          print('OK tablolar olusturuldu')
+
+          # Ban
+          db.ban('192.0.2.1', reason='test', score=85, attack_type='brute_force',
+                 country='CN', city='Beijing', duration=3600)
+          assert db.is_banned('192.0.2.1'), 'Ban basarisiz'
+          print('OK ban islemi')
+
+          # Event
+          db.log_event('192.0.2.1', 'brute_force', 'test event', 85, 'CN')
+          events = db.get_recent_events(10)
+          assert len(events) >= 1, 'Olay kaydedilmedi'
+          print(f'OK olay kaydi: {len(events)} kayit')
+
+          # Stats
+          stats = db.get_stats()
+          assert stats['total_events'] >= 1, 'Istatistik hatasi'
+          print(f'OK istatistik: {stats[\"total_events\"]} olay, {stats[\"total_bans\"]} ban')
+
+          # Unban
+          db.unban('192.0.2.1')
+          assert not db.is_banned('192.0.2.1'), 'Unban basarisiz'
+          print('OK unban islemi')
+
+          print('DATABASE TESTLERI BASARILI')
           "

@@ -1,0 +1,14 @@
+node_modules/
+*.log
+logs/
+.env
+.telegram
+.pids
+__pycache__/
+*.pyc
+firewall.db
+site.db
+*.db-journal
+settings.json
+firewall.db-*
+site.db-*

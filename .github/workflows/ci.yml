@@ -1,0 +1,100 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  python-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Bagimliliklari kur
+        run: |
+          pip install --upgrade pip
+          pip install flake8 mysql-connector-python
+
+      - name: Python syntax kontrolu
+        run: |
+          python -m py_compile core/config.py
+          python -m py_compile core/detector.py
+          python -m py_compile core/scorer.py
+          python -m py_compile core/blocker.py
+          python -m py_compile core/geoip.py
+          python -m py_compile core/database.py
+          python -m py_compile core/engine.py
+          python -m py_compile core/telegram_bot.py
+          python -m py_compile main.py
+          python -m py_compile simulator/attack_sim.py
+
+      - name: Lint (flake8)
+        run: |
+          flake8 core/ main.py simulator/ \
+            --count --select=E9,F63,F7,F82 \
+            --show-source --statistics
+        continue-on-error: true
+
+  nodejs-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Site bagimliliklari
+        working-directory: ./site
+        run: npm install
+
+      - name: Site syntax kontrolu
+        working-directory: ./site
+        run: node --check server.js
+
+      - name: Dashboard bagimliliklari
+        working-directory: ./dashboard
+        run: npm install
+
+      - name: Dashboard syntax kontrolu
+        working-directory: ./dashboard
+        run: |
+          node --check server.js
+          node --check public/app.js
+
+  detector-test:
+    runs-on: ubuntu-latest
+    needs: python-checks
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Detector birim testi
+        working-directory: ./core
+        run: |
+          python3 -c "
+          from detector import Detector
+          d = Detector()
+          tests = [
+              ('SQLI_ATTEMPT ip=1.2.3.4 payload=union select', 'sqli'),
+              ('XSS_ATTEMPT ip=5.6.7.8 payload=<script>', 'xss'),
+              ('LOGIN_FAIL ip=9.10.11.12 user=admin', 'brute_force'),
+              ('HONEYPOT ip=13.14.15.16 path=/wp-admin', 'honeypot'),
+              ('FLOOD ip=17.18.19.20 rate=500', 'ddos'),
+          ]
+          for line, expected in tests:
+              r = d.parse(line)
+              assert r is not None, f'Detector None doner: {line}'
+              assert r['type'] == expected, f'Beklenen {expected}, geldi {r[\"type\"]}'
+              print(f'OK {expected}: {r[\"ip\"]}')
+          print('Tum testler basarili')
+          "

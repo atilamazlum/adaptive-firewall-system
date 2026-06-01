@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Erisim Engellendi</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Spectral:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #faf8f3;
+  color: #1f1d1a;
+  font-family: 'IBM Plex Mono', monospace;
+  height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(139,58,47,0.03) 28px);
+}
+.box {
+  text-align: center; max-width: 460px; padding: 40px;
+  border: 2px solid #8b3a2f;
+  background: #faf8f3;
+}
+.code {
+  font-size: 13px; color: #8b3a2f; font-weight: 500;
+  letter-spacing: 2px; margin-bottom: 16px;
+}
+h1 {
+  font-family: 'Spectral', serif;
+  font-size: 32px; font-weight: 700; margin-bottom: 12px;
+}
+p { font-size: 13px; color: #5c5850; line-height: 1.7; }
+.divider { width: 40px; height: 2px; background: #8b3a2f; margin: 20px auto; }
+.detail {
+  margin-top: 20px; padding: 12px;
+  background: rgba(139,58,47,0.06);
+  font-size: 11px; color: #8f8a7e; text-align: left;
+}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="code">HTTP 403 — FORBIDDEN</div>
+  <h1>Erisim Engellendi</h1>
+  <div class="divider"></div>
+  <p>
+    IP adresiniz, Adaptive Firewall System tarafindan supheli aktivite
+    nedeniyle gecici olarak engellenmistir.
+  </p>
+  <div class="detail">
+    > Bu karar otomatik risk puanlama sistemi tarafindan verilmistir.<br>
+    > Engelleme suresi dolunca erisim otomatik olarak acilacaktir.<br>
+    > Hata oldugunu dusunuyorsaniz sistem yoneticisiyle iletisime gecin.
+  </div>
+</div>
+</body>
+</html>

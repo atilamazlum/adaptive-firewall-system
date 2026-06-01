@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atila Bank — Dijital Bankacılık</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --navy: #0a2540; --navy2: #133a5e; --navy3: #1d4e7c;
+  --gold: #c9a44c; --gold2: #e0c074;
+  --bg: #f4f6f9; --surface: #ffffff; --surface2: #eef1f5;
+  --text: #0a2540; --text2: #5a6b7d; --text3: #9aa7b5;
+  --line: #e2e8f0;
+  --green: #1a9e62; --green-bg: #e6f6ee;
+  --red: #d23f3f; --red-bg: #fbeaea;
+  --sans: 'Manrope', sans-serif; --mono: 'DM Mono', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); }
+
+.auth-screen { min-height: 100vh; display: flex; }
+.auth-visual {
+  flex: 1; background: linear-gradient(150deg, var(--navy) 0%, var(--navy2) 60%, var(--navy3) 100%);
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: space-between; padding: 48px;
+}
+.auth-visual::before {
+  content: ''; position: absolute; width: 480px; height: 480px;
+  border: 1px solid rgba(201,164,76,0.15); border-radius: 50%; top: -180px; right: -160px;
+}
+.auth-visual::after {
+  content: ''; position: absolute; width: 320px; height: 320px;
+  border: 1px solid rgba(201,164,76,0.1); border-radius: 50%; bottom: -120px; left: -100px;
+}
+.av-brand {
+  display: flex; align-items: center; gap: 12px;
+  color: #fff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
+  position: relative; z-index: 1;
+}
+.av-logo {
+  width: 38px; height: 38px; border-radius: 9px;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  display: flex; align-items: center; justify-content: center;
+  color: var(--navy); font-weight: 800; font-size: 20px;
+}
+.av-content { position: relative; z-index: 1; }
+.av-headline {
+  color: #fff; font-size: 36px; font-weight: 800;
+  line-height: 1.25; letter-spacing: -1px; margin-bottom: 16px;
+}
+.av-headline span { color: var(--gold2); }
+.av-text { color: rgba(255,255,255,0.6); font-size: 15px; max-width: 380px; line-height: 1.6; }
+.av-foot { position: relative; z-index: 1; color: rgba(255,255,255,0.4); font-size: 12px; font-family: var(--mono); }
+.av-badges { display: flex; gap: 20px; margin-top: 14px; }
+.av-badge { color: rgba(255,255,255,0.55); font-size: 12px; display: flex; align-items: center; gap: 6px; }
+.av-badge::before { content: ''; width: 6px; height: 6px; background: var(--gold); border-radius: 50%; }
+
+.auth-form-wrap {
+  width: 480px; background: var(--surface);
+  display: flex; flex-direction: column; justify-content: center; padding: 56px;
+}
+.afw-head { margin-bottom: 36px; }
+.afw-title { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+.afw-sub { font-size: 14px; color: var(--text2); margin-top: 6px; }
+.tabs { display: flex; gap: 4px; margin-bottom: 28px; background: var(--surface2); padding: 4px; border-radius: 10px; }
+.tab {
+  flex: 1; padding: 10px; text-align: center;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  border-radius: 7px; color: var(--text2); transition: all 0.15s;
+}
+.tab.active { background: var(--surface); color: var(--navy); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.field { margin-bottom: 18px; }
+.field label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 7px; }
+.field input {
+  width: 100%; padding: 13px 14px;
+  border: 1.5px solid var(--line); border-radius: 9px;
+  font-family: var(--sans); font-size: 14px; color: var(--text);
+  outline: none; transition: all 0.15s;
+}
+.field input:focus { border-color: var(--navy3); box-shadow: 0 0 0 3px rgba(29,78,124,0.08); }
+.btn {
+  width: 100%; padding: 14px; background: var(--navy); color: #fff;
+  border: none; border-radius: 9px;
+  font-family: var(--sans); font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+}
+.btn:hover { background: var(--navy2); }
+.btn-gold { background: linear-gradient(135deg, var(--gold), var(--gold2)); color: var(--navy); }
+.btn-gold:hover { filter: brightness(1.05); }
+.msg { margin-top: 14px; padding: 11px 13px; border-radius: 8px; font-size: 13px; display: none; }
+.msg.show { display: block; }
+.msg.ok { background: var(--green-bg); color: var(--green); }
+.msg.err { background: var(--red-bg); color: var(--red); }
+.auth-note {
+  margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line);
+  font-size: 11px; color: var(--text3); font-family: var(--mono); line-height: 1.6;
+}
+
+.app { display: none; min-height: 100vh; }
+.app.active { display: flex; }
+.app-side {
+  width: 248px; background: var(--navy); flex-shrink: 0;
+  display: flex; flex-direction: column; padding: 24px 0;
+}
+.as-brand {
+  display: flex; align-items: center; gap: 11px;
+  padding: 0 24px 24px; color: #fff; font-size: 18px; font-weight: 800;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.as-nav { padding: 16px 12px; flex: 1; }
+.as-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: 9px; margin-bottom: 3px;
+  color: rgba(255,255,255,0.6); font-size: 14px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s; border: none;
+  background: none; width: 100%; text-align: left; font-family: var(--sans);
+}
+.as-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.as-item.active { background: var(--navy3); color: #fff; }
+.as-item .ico { width: 18px; text-align: center; flex-shrink: 0; }
+.as-foot { padding: 16px 24px 0; border-top: 1px solid rgba(255,255,255,0.08); }
+.as-user { display: flex; align-items: center; gap: 10px; }
+.as-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  display: flex; align-items: center; justify-content: center;
+  color: var(--navy); font-weight: 800; font-size: 14px;
+}
+.as-uname { color: #fff; font-size: 13px; font-weight: 600; }
+.as-urole { color: rgba(255,255,255,0.4); font-size: 11px; }
+.as-logout {
+  margin-top: 14px; width: 100%; padding: 9px;
+  background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7);
+  border: none; border-radius: 7px; font-size: 12px; cursor: pointer; font-family: var(--sans);
+}
+.as-logout:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.app-main { flex: 1; padding: 28px 36px; overflow-y: auto; }
+.app-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+.at-title { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+.at-date { font-size: 13px; color: var(--text2); }
+.view { display: none; }
+.view.active { display: block; }
+.balance-card {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
+  border-radius: 16px; padding: 26px; color: #fff;
+  position: relative; overflow: hidden; margin-bottom: 22px;
+}
+.balance-card::before {
+  content: ''; position: absolute; width: 220px; height: 220px;
+  border: 1px solid rgba(201,164,76,0.2); border-radius: 50%; top: -90px; right: -50px;
+}
+.bc-label { font-size: 13px; color: rgba(255,255,255,0.55); margin-bottom: 8px; }
+.bc-amount { font-size: 38px; font-weight: 800; letter-spacing: -1px; }
+.bc-amount .cur { font-size: 20px; color: var(--gold2); margin-left: 4px; }
+.bc-iban { margin-top: 16px; font-family: var(--mono); font-size: 13px; color: rgba(255,255,255,0.6); letter-spacing: 0.5px; }
+.bc-row { display: flex; gap: 28px; margin-top: 18px; position: relative; z-index: 1; }
+.bc-stat-label { font-size: 11px; color: rgba(255,255,255,0.45); }
+.bc-stat-val { font-size: 15px; font-weight: 700; margin-top: 3px; }
+.grid { display: grid; gap: 18px; }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-2 { grid-template-columns: 1.6fr 1fr; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 13px; padding: 20px; }
+.card-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.card-sub { font-size: 12px; color: var(--text3); margin-bottom: 16px; }
+.acc-item { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+.acc-item:last-child { border-bottom: none; }
+.acc-icon {
+  width: 42px; height: 42px; border-radius: 10px;
+  background: var(--surface2); display: flex;
+  align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; flex-shrink: 0; color: var(--navy);
+}
+.acc-info { flex: 1; }
+.acc-name { font-size: 14px; font-weight: 600; }
+.acc-no { font-size: 12px; color: var(--text3); font-family: var(--mono); }
+.acc-bal { font-size: 15px; font-weight: 700; }
+.tx-item { display: flex; align-items: center; gap: 13px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.tx-item:last-child { border-bottom: none; }
+.tx-dot {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 700; flex-shrink: 0;
+}
+.tx-in { background: var(--green-bg); color: var(--green); }
+.tx-out { background: var(--red-bg); color: var(--red); }
+.tx-info { flex: 1; }
+.tx-name { font-size: 13px; font-weight: 600; }
+.tx-time { font-size: 11px; color: var(--text3); }
+.tx-amt { font-size: 14px; font-weight: 700; }
+.tx-amt.in { color: var(--green); }
+.tx-amt.out { color: var(--red); }
+.credit-card {
+  background: linear-gradient(135deg, #1d4e7c 0%, #0a2540 100%);
+  border-radius: 14px; padding: 22px; color: #fff;
+  aspect-ratio: 1.6; display: flex; flex-direction: column;
+  justify-content: space-between; position: relative; overflow: hidden;
+}
+.credit-card.gold { background: linear-gradient(135deg, #c9a44c 0%, #8a6d28 100%); }
+.cc-chip { width: 38px; height: 28px; border-radius: 5px; background: linear-gradient(135deg, #e0c074, #c9a44c); }
+.cc-no { font-family: var(--mono); font-size: 16px; letter-spacing: 2px; }
+.cc-bottom { display: flex; justify-content: space-between; align-items: flex-end; }
+.cc-label { font-size: 9px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; }
+.cc-val { font-size: 12px; font-weight: 600; margin-top: 2px; }
+.cc-brand { font-size: 15px; font-weight: 800; font-style: italic; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.results { margin-top: 14px; }
+.result-item { padding: 11px 13px; background: var(--surface2); border-radius: 8px; margin-bottom: 7px; font-size: 13px; }
+.comment { padding: 12px 14px; background: var(--surface2); border-radius: 9px; margin-bottom: 8px; font-size: 13px; }
+.comment-time { font-size: 10px; color: var(--text3); margin-top: 4px; font-family: var(--mono); }
+textarea {
+  width: 100%; padding: 12px 14px; border: 1.5px solid var(--line);
+  border-radius: 9px; font-family: var(--sans); font-size: 14px;
+  resize: vertical; min-height: 90px; outline: none;
+}
+textarea:focus { border-color: var(--navy3); }
+.quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px; }
+.qa-btn {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 11px; padding: 16px; text-align: center;
+  cursor: pointer; transition: all 0.15s;
+}
+.qa-btn:hover { border-color: var(--navy3); transform: translateY(-2px); }
+.qa-icon {
+  width: 40px; height: 40px; margin: 0 auto 8px;
+  background: var(--navy); color: #fff; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+}
+.qa-label { font-size: 12px; font-weight: 600; }
+.section-label {
+  font-size: 13px; font-weight: 700; color: var(--text2);
+  margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+</style>
+</head>
+<body>
+
+<!-- GIRIS EKRANI -->
+<div class="auth-screen" id="auth">
+  <div class="auth-visual">
+    <div class="av-brand"><div class="av-logo">A</div> Atila Bank</div>
+    <div class="av-content">
+      <div class="av-headline">Bankacılık artık<br><span>daha güvenli.</span></div>
+      <div class="av-text">
+        Atila Bank dijital bankacılık platformu ile hesaplarınıza 7/24 güvenle
+        erişin. Tüm işlemleriniz çok katmanlı güvenlik duvarı ile korunur.
+      </div>
+      <div class="av-badges">
+        <div class="av-badge">256-bit şifreleme</div>
+        <div class="av-badge">Adaptive Firewall korumalı</div>
+      </div>
+    </div>
+    <div class="av-foot">© 2026 Atila Bank · Demo Ortamı</div>
+  </div>
+  <div class="auth-form-wrap">
+    <div class="afw-head">
+      <div class="afw-title">Hoş geldiniz</div>
+      <div class="afw-sub">Hesabınıza giriş yapın veya yeni hesap oluşturun</div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" id="tab-login" onclick="switchTab('login')">Giriş Yap</div>
+      <div class="tab" id="tab-signup" onclick="switchTab('signup')">Hesap Aç</div>
+    </div>
+    <div id="form-login">
+      <div class="field">
+        <label>Müşteri Numarası</label>
+        <input id="login-user" placeholder="Müşteri no veya kullanıcı adı"/>
+      </div>
+      <div class="field">
+        <label>Şifre</label>
+        <input id="login-pass" type="password" placeholder="••••••••"/>
+      </div>
+      <button class="btn" onclick="doLogin()">Güvenli Giriş</button>
+      <div class="msg" id="login-msg"></div>
+    </div>
+    <div id="form-signup" style="display:none">
+      <div class="field">
+        <label>Kullanıcı Adı</label>
+        <input id="signup-user" placeholder="En az 3 karakter"/>
+      </div>
+      <div class="field">
+        <label>Şifre</label>
+        <input id="signup-pass" type="password" placeholder="En az 4 karakter"/>
+      </div>
+      <button class="btn btn-gold" onclick="doSignup()">Hesap Oluştur</button>
+      <div class="msg" id="signup-msg"></div>
+    </div>
+    <div class="auth-note">
+      Bu site Adaptive Firewall System bitirme projesinin test hedefidir.<br>
+      Demo giriş: admin / admin123
+    </div>
+  </div>
+</div>
+
+<!-- UYGULAMA -->
+<div class="app" id="app">
+  <aside class="app-side">
+    <div class="as-brand"><div class="av-logo">A</div> Atila Bank</div>
+    <nav class="as-nav">
+      <button class="as-item active" onclick="showView('home', this)"><span class="ico">▢</span> Ana Sayfa</button>
+      <button class="as-item" onclick="showView('transfer', this)"><span class="ico">⇄</span> Para Transferi</button>
+      <button class="as-item" onclick="showView('history', this)"><span class="ico">≡</span> İşlem Geçmişi</button>
+      <button class="as-item" onclick="showView('cards', this)"><span class="ico">▭</span> Kartlarım</button>
+      <button class="as-item" onclick="showView('support', this)"><span class="ico">✉</span> Destek</button>
+      <button class="as-item" onclick="showView('profile', this)"><span class="ico">◉</span> Profil</button>
+    </nav>
+    <div class="as-foot">
+      <div class="as-user">
+        <div class="as-avatar" id="user-avatar">A</div>
+        <div>
+          <div class="as-uname" id="user-name">Müşteri</div>
+          <div class="as-urole">Bireysel Hesap</div>
+        </div>
+      </div>
+      <button class="as-logout" onclick="logout()">Çıkış Yap</button>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-topbar">
+      <div>
+        <div class="at-title" id="view-title">Ana Sayfa</div>
+        <div class="at-date" id="today-date"></div>
+      </div>
+    </div>
+
+    <div class="view active" id="view-home">
+      <div class="balance-card">
+        <div class="bc-label">Toplam Bakiye</div>
+        <div class="bc-amount">148.250,00<span class="cur">TL</span></div>
+        <div class="bc-iban">TR82 0009 1234 5678 9012 3456 78</div>
+        <div class="bc-row">
+          <div><div class="bc-stat-label">Bu Ay Gelen</div><div class="bc-stat-val">+24.500 TL</div></div>
+          <div><div class="bc-stat-label">Bu Ay Giden</div><div class="bc-stat-val">-9.840 TL</div></div>
+          <div><div class="bc-stat-label">Vadeli Hesap</div><div class="bc-stat-val">62.000 TL</div></div>
+        </div>
+      </div>
+      <div class="quick-actions">
+        <div class="qa-btn" onclick="showView('transfer', document.querySelectorAll('.as-item')[1])">
+          <div class="qa-icon">⇄</div><div class="qa-label">Para Gönder</div>
+        </div>
+        <div class="qa-btn" onclick="showView('history', document.querySelectorAll('.as-item')[2])">
+          <div class="qa-icon">≡</div><div class="qa-label">İşlemler</div>
+        </div>
+        <div class="qa-btn" onclick="showView('cards', document.querySelectorAll('.as-item')[3])">
+          <div class="qa-icon">▭</div><div class="qa-label">Kartlarım</div>
+        </div>
+        <div class="qa-btn" onclick="showView('support', document.querySelectorAll('.as-item')[4])">
+          <div class="qa-icon">✉</div><div class="qa-label">Destek</div>
+        </div>
+      </div>
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-title">Hesaplarım</div>
+          <div class="card-sub">Tüm banka hesaplarınız</div>
+          <div class="acc-item">
+            <div class="acc-icon">TL</div>
+            <div class="acc-info">
+              <div class="acc-name">Vadesiz TL Hesabı</div>
+              <div class="acc-no">TR82 **** **** 3456 78</div>
+            </div>
+            <div class="acc-bal">148.250,00 TL</div>
+          </div>
+          <div class="acc-item">
+            <div class="acc-icon">$</div>
+            <div class="acc-info">
+              <div class="acc-name">Döviz Hesabı (USD)</div>
+              <div class="acc-no">TR55 **** **** 8821 04</div>
+            </div>
+            <div class="acc-bal">3.420,00 USD</div>
+          </div>
+          <div class="acc-item">
+            <div class="acc-icon">◆</div>
+            <div class="acc-info">
+              <div class="acc-name">Vadeli Mevduat</div>
+              <div class="acc-no">TR19 **** **** 6677 90</div>
+            </div>
+            <div class="acc-bal">62.000,00 TL</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Son İşlemler</div>
+          <div class="card-sub">Son hareketleriniz</div>
+          <div class="tx-item">
+            <div class="tx-dot tx-in">↓</div>
+            <div class="tx-info"><div class="tx-name">Maaş Ödemesi</div><div class="tx-time">Bugün, 09:14</div></div>
+            <div class="tx-amt in">+24.500 TL</div>
+          </div>
+          <div class="tx-item">
+            <div class="tx-dot tx-out">↑</div>
+            <div class="tx-info"><div class="tx-name">Elektrik Faturası</div><div class="tx-time">Dün, 16:32</div></div>
+            <div class="tx-amt out">-840 TL</div>
+          </div>
+          <div class="tx-item">
+            <div class="tx-dot tx-out">↑</div>
+            <div class="tx-info"><div class="tx-name">Market Alışverişi</div><div class="tx-time">23 May, 19:05</div></div>
+            <div class="tx-amt out">-1.250 TL</div>
+          </div>
+          <div class="tx-item">
+            <div class="tx-dot tx-in">↓</div>
+            <div class="tx-info"><div class="tx-name">Para İadesi</div><div class="tx-time">22 May, 11:48</div></div>
+            <div class="tx-amt in">+360 TL</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="view" id="view-transfer">
+      <div class="card" style="max-width:560px">
+        <div class="card-title">Para Transferi</div>
+        <div class="card-sub">IBAN ile havale / EFT işlemi</div>
+        <div class="field">
+          <label>Alıcı IBAN</label>
+          <input id="transfer-iban" placeholder="TR00 0000 0000 0000 0000 0000 00"/>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>Alıcı Adı</label><input id="transfer-name" placeholder="Ad Soyad"/></div>
+          <div class="field"><label>Tutar (TL)</label><input id="transfer-amount" placeholder="0,00"/></div>
+        </div>
+        <div class="field">
+          <label>Açıklama</label>
+          <input id="transfer-desc" placeholder="İşlem açıklaması"/>
+        </div>
+        <button class="btn" onclick="doTransfer()">Transferi Onayla</button>
+        <div class="msg" id="transfer-msg"></div>
+      </div>
+    </div>
+
+    <div class="view" id="view-history">
+      <div class="card">
+        <div class="card-title">İşlem Geçmişi</div>
+        <div class="card-sub">Geçmiş işlemlerinizde arama yapın</div>
+        <div class="field" style="max-width:380px">
+          <label>İşlem Ara</label>
+          <input id="search-q" placeholder="örn: havale, fatura, maaş..."/>
+        </div>
+        <button class="btn" style="width:auto;padding:11px 24px" onclick="doSearch()">Ara</button>
+        <div class="msg" id="search-msg"></div>
+        <div class="results" id="search-results"></div>
+      </div>
+    </div>
+
+    <div class="view" id="view-cards">
+      <div class="section-label">Banka & Kredi Kartlarınız</div>
+      <div class="grid grid-3">
+        <div class="credit-card">
+          <div class="cc-chip"></div>
+          <div class="cc-no">5312 •••• •••• 4408</div>
+          <div class="cc-bottom">
+            <div><div class="cc-label">Kart Sahibi</div><div class="cc-val" id="card-name">MUSTERI</div></div>
+            <div class="cc-brand">Atila</div>
+          </div>
+        </div>
+        <div class="credit-card gold">
+          <div class="cc-chip"></div>
+          <div class="cc-no">4729 •••• •••• 1180</div>
+          <div class="cc-bottom">
+            <div><div class="cc-label">Kredi Kartı</div><div class="cc-val">Limit: 45.000 TL</div></div>
+            <div class="cc-brand">Atila</div>
+          </div>
+        </div>
+        <div class="card" style="display:flex;flex-direction:column;justify-content:center;align-items:center;border-style:dashed;cursor:pointer">
+          <div style="font-size:30px;color:var(--text3)">+</div>
+          <div style="font-size:13px;color:var(--text2);font-weight:600;margin-top:6px">Yeni Kart Başvurusu</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="view" id="view-support">
+      <div class="card" style="max-width:600px">
+        <div class="card-title">Müşteri Destek</div>
+        <div class="card-sub">Görüş, öneri ve şikayetlerinizi iletin</div>
+        <div class="field">
+          <label>Mesajınız</label>
+          <textarea id="comment-text" placeholder="Bize iletmek istediğiniz konuyu yazın..."></textarea>
+        </div>
+        <button class="btn" style="width:auto;padding:11px 24px" onclick="doComment()">Mesaj Gönder</button>
+        <div class="msg" id="comment-msg"></div>
+        <div id="comment-list" style="margin-top:18px"></div>
+      </div>
+    </div>
+
+    <div class="view" id="view-profile">
+      <div class="card" style="max-width:480px">
+        <div class="card-title">Profil Belgeleri</div>
+        <div class="card-sub">Hesap belgelerinizi görüntüleyin</div>
+        <div class="field">
+          <label>Belge Adı</label>
+          <input id="profile-file" value="hesap-ozeti" placeholder="belge adı"/>
+        </div>
+        <button class="btn" style="width:auto;padding:11px 24px" onclick="doProfile()">Belgeyi Aç</button>
+        <div class="msg" id="profile-msg"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+function switchTab(tab) {
+  document.getElementById("tab-login").classList.toggle("active", tab === "login");
+  document.getElementById("tab-signup").classList.toggle("active", tab === "signup");
+  document.getElementById("form-login").style.display = tab === "login" ? "block" : "none";
+  document.getElementById("form-signup").style.display = tab === "signup" ? "block" : "none";
+}
+function showMsg(id, text, type) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = "msg show " + type;
+}
+async function doLogin() {
+  const username = document.getElementById("login-user").value;
+  const password = document.getElementById("login-pass").value;
+  try {
+    const res = await fetch("/api/login", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    if (data.ok) enterApp(data.username);
+    else showMsg("login-msg", data.error, "err");
+  } catch { showMsg("login-msg", "Bağlantı hatası", "err"); }
+}
+async function doSignup() {
+  const username = document.getElementById("signup-user").value;
+  const password = document.getElementById("signup-pass").value;
+  try {
+    const res = await fetch("/api/signup", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    showMsg("signup-msg", data.ok ? data.message + " Giriş yapabilirsiniz." : data.error,
+            data.ok ? "ok" : "err");
+    if (data.ok) setTimeout(() => switchTab("login"), 1200);
+  } catch { showMsg("signup-msg", "Bağlantı hatası", "err"); }
+}
+function enterApp(username) {
+  document.getElementById("auth").style.display = "none";
+  document.getElementById("app").classList.add("active");
+  const name = username || "Müşteri";
+  document.getElementById("user-name").textContent = name;
+  document.getElementById("user-avatar").textContent = name[0].toUpperCase();
+  document.getElementById("card-name").textContent = name.toUpperCase();
+  const d = new Date();
+  document.getElementById("today-date").textContent =
+    d.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
+}
+function logout() {
+  document.getElementById("app").classList.remove("active");
+  document.getElementById("auth").style.display = "flex";
+  document.getElementById("login-user").value = "";
+  document.getElementById("login-pass").value = "";
+  document.getElementById("login-msg").className = "msg";
+}
+const VIEW_TITLES = {
+  home: "Ana Sayfa", transfer: "Para Transferi", history: "İşlem Geçmişi",
+  cards: "Kartlarım", support: "Müşteri Destek", profile: "Profil",
+};
+function showView(view, el) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.querySelectorAll(".as-item").forEach(i => i.classList.remove("active"));
+  document.getElementById("view-" + view).classList.add("active");
+  if (el) el.classList.add("active");
+  document.getElementById("view-title").textContent = VIEW_TITLES[view];
+  if (view === "support") loadComments();
+}
+async function doTransfer() {
+  const iban = document.getElementById("transfer-iban").value;
+  const desc = document.getElementById("transfer-desc").value;
+  try {
+    const res = await fetch("/api/search?q=" + encodeURIComponent(iban + " " + desc));
+    const data = await res.json();
+    if (data.ok) showMsg("transfer-msg", "Transfer talebi alındı. İşlem onaya gönderildi.", "ok");
+    else showMsg("transfer-msg", data.error, "err");
+  } catch { showMsg("transfer-msg", "Bağlantı hatası", "err"); }
+}
+async function doSearch() {
+  const q = document.getElementById("search-q").value;
+  try {
+    const res = await fetch("/api/search?q=" + encodeURIComponent(q));
+    const data = await res.json();
+    const box = document.getElementById("search-results");
+    if (data.ok) {
+      document.getElementById("search-msg").className = "msg";
+      box.innerHTML = data.results.length
+        ? data.results.map(r => `<div class="result-item">${r}</div>`).join("")
+        : '<div class="result-item">Sonuç bulunamadı.</div>';
+    } else {
+      showMsg("search-msg", data.error, "err");
+      box.innerHTML = "";
+    }
+  } catch { showMsg("search-msg", "Bağlantı hatası", "err"); }
+}
+async function doComment() {
+  const text = document.getElementById("comment-text").value;
+  try {
+    const res = await fetch("/api/comment", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      document.getElementById("comment-msg").className = "msg";
+      document.getElementById("comment-text").value = "";
+      renderComments(data.comments);
+    } else showMsg("comment-msg", data.error, "err");
+  } catch { showMsg("comment-msg", "Bağlantı hatası", "err"); }
+}
+async function loadComments() {
+  try {
+    const res = await fetch("/api/comments");
+    const data = await res.json();
+    renderComments(data.comments);
+  } catch {}
+}
+function renderComments(comments) {
+  const box = document.getElementById("comment-list");
+  if (!comments || !comments.length) {
+    box.innerHTML = '<div class="comment-time">Henüz mesaj yok.</div>';
+    return;
+  }
+  box.innerHTML = comments.slice().reverse().map(c =>
+    `<div class="comment">${c.text}<div class="comment-time">${new Date(c.time).toLocaleString("tr-TR")}</div></div>`
+  ).join("");
+}
+async function doProfile() {
+  const file = document.getElementById("profile-file").value;
+  try {
+    const res = await fetch("/api/profile?file=" + encodeURIComponent(file));
+    const data = await res.json();
+    showMsg("profile-msg", data.ok ? data.profile : data.error, data.ok ? "ok" : "err");
+  } catch { showMsg("profile-msg", "Bağlantı hatası", "err"); }
+}
+</script>
+</body>
+</html>

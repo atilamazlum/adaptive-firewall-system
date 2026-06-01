@@ -20,25 +20,9 @@ Sistem üç katmandan oluşur:
 Brute force, yavaş brute force, port tarama, DDoS/flood, XSS, SQL injection,
 path traversal, komut enjeksiyonu, kötü bot ve honeypot tuzakları.
 
-## Bileşenler
+## ER DİYAGRAM
 
-```
-firewall-final/
-├── core/              Python güvenlik motoru
-│   ├── config.py      Ayarlar
-│   ├── database.py    SQLite veritabanı katmanı
-│   ├── detector.py    Katman 1 - tespit
-│   ├── scorer.py      Katman 2 - risk puanlama
-│   ├── blocker.py     Katman 3 - nftables engelleme
-│   ├── geoip.py       Coğrafi IP analizi
-│   └── engine.py      Ana motor
-├── site/              Hedef test sitesi (Node.js)
-├── dashboard/         Yönetim paneli (Node.js + WebSocket)
-├── simulator/         Saldırı simülatörü
-├── main.py            Giriş noktası
-├── start.sh           Tüm servisleri başlatır
-└── stop.sh            Tüm servisleri durdurur
-```
+<img src="*.png" alt="Proje Logosu" width="500">
 
 ## Kurulum
 
